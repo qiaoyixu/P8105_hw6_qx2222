@@ -1,0 +1,64 @@
+---
+title: "P8105_hw6_qx2222"
+author: "Qiaoyi Xu"
+date: "2022-12-01"
+output: github_document
+---
+
+```{r}
+library(tidyverse)
+```
+
+## Problem 1
+
+
+## Problem 2
+
+### Data import
+```{r}
+homicide = read_csv("data/homicide-data.csv") #import 'homicide' data
+```
+
+### Data cleaning
+```{r}
+homicide = homicide %>%
+  mutate(city_state = str_c(city, ", ", state)) %>%
+  mutate(homicide_status = if_else(disposition == "Closed without arrest", "unresolved",
+                                   if_else(disposition == "Open/No arrest", "unresolved",
+                                           if_else(disposition == "Closed by arrest", "resolved", NA_character_)))) %>%
+  filter(!(city_state %in% c("Dallas, TX", "Phoenix, AZ", "Kansas City, MO", "Tulsa, AL"))) %>% #omit observations
+  filter(victim_race %in% c("Black", "White")) %>% #limit your analysis those for whom victim_race is white or black
+  mutate(victim_age = as.numeric(victim_age)) %>% # Be sure that victim_age is numeric
+  drop_na(victim_age)
+
+
+homicide
+```
+
+### For the city of Baltimore, MD
+```{r, warning=FALSE}
+log_reg = homicide %>% #use the glm function to fit a logistic regression
+  filter(city_state == "Baltimore, MD") %>%
+  mutate(homicide_status = fct_relevel(homicide_status, "resloved")) %>%
+  glm(homicide_status ~ victim_age + victim_sex + victim_race, data = ., family = binomial())
+  
+```
+
+```{r}
+glm_output = log_reg %>%
+  broom::tidy() %>%
+  mutate(OR = exp(estimate),
+         CI_lower = exp(estimate - 1.96*std.error),
+         CI_higher = exp(estimate + 1.96*std.error)) %>%
+  select(term, estimate, OR, CI_lower, CI_higher) %>%
+  knitr::kable(digits = 3, col.names = c("Term", "Estimate", "Odds ratio", "95CI_low","95CI_high"))
+
+glm_output
+
+```
+
+### Run glm for each of the cities
+```{r}
+
+```
+
