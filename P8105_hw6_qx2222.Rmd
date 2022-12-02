@@ -37,28 +37,61 @@ homicide
 
 ### For the city of Baltimore, MD
 ```{r, warning=FALSE}
-log_reg = homicide %>% #use the glm function to fit a logistic regression
+fit_log_MD = homicide %>% #use the glm function to fit a logistic regression
   filter(city_state == "Baltimore, MD") %>%
   mutate(homicide_status = fct_relevel(homicide_status, "resloved")) %>%
-  glm(homicide_status ~ victim_age + victim_sex + victim_race, data = ., family = binomial())
-  
-```
-
-```{r}
-glm_output = log_reg %>%
+  glm(homicide_status ~ victim_age + victim_sex + victim_race, data = ., family = binomial())%>%
   broom::tidy() %>%
   mutate(OR = exp(estimate),
          CI_lower = exp(estimate - 1.96*std.error),
          CI_higher = exp(estimate + 1.96*std.error)) %>%
   select(term, estimate, OR, CI_lower, CI_higher) %>%
   knitr::kable(digits = 3, col.names = c("Term", "Estimate", "Odds ratio", "95CI_low","95CI_high"))
-
-glm_output
-
+  
 ```
+
 
 ### Run glm for each of the cities
 ```{r}
+homicide_cities = homicide %>% #use the glm function to fit a logistic regression
+  mutate(homicide_status = fct_relevel(homicide_status, "resloved")) %>%
+  nest(data = -city_state) %>%
+  mutate(
+    models = map(.x = data, ~ glm(homicide_status ~ victim_age + victim_sex + victim_race, data = .x, family = binomial())),
+    output = map (models, broom::tidy))%>%
+  select(city_state, output) %>%
+  unnest(output) %>%
+  mutate(OR = exp(estimate),
+         CI_lower = exp(estimate - 1.96*std.error),
+         CI_higher = exp(estimate + 1.96*std.error)) %>%
+  select(city_state, term, estimate, OR, CI_lower, CI_higher) %>%
+  filter(term == "victim_sexMale")
 
+homicide_cities %>%
+  knitr::kable(digits = 3, col.names = c("City, state", "Term", "Estimate", "Odds ratio", "95CI_low","95CI_high"))
 ```
+
+### Create a plot that shows the estimated ORs and CIs for each city
+```{r}
+prob2_plot = homicide_cities %>%
+  mutate(city_state = reorder(city_state, OR)) %>%
+  ggplot(aes(x = city_state, y = OR))+
+  geom_point(alpha = .5) +
+  geom_errorbar(aes(ymin = CI_lower, ymax = CI_higher))+
+  labs(x = "City, state", y = "Odds Ratio",
+       title = "The estimated ORs and CIs for each city") +
+  theme(axis.text.x = element_text(angle = 90))
+
+prob2_plot
+```
+```{r}
+ggsave(
+  filename = "results/plot for each city(problem 2).pdf",
+  plot = prob2_plot,
+  width = 30,
+  height = 20,
+  units = "cm"
+  ) #export plot to 'results' directory
+```
+
 
