@@ -8,6 +8,7 @@ output: github_document
 ```{r}
 library(tidyverse)
 library(modelr)
+library(mgcv)
 ```
 
 ## Problem 1
@@ -160,6 +161,45 @@ ggsave(
   height = 20,
   units = "cm"
   ) #export plot to 'results' directory
+```
+
+### Compare your model to two others
+One using length at birth and gestational age as predictors (main effects only)
+One using head circumference, length, sex, and all interactions (including the three-way interaction) between these
+```{r}
+cv_df = crossv_mc(birthweight,100) %>%
+  mutate(
+    train = map(train, as_tibble),
+    test = map(test, as_tibble))
+
+cv_df = 
+  cv_df %>% 
+  mutate(
+    my_mod  = map(train, ~lm(bwt ~ delwt + gaweeks + mheight + momage + mrace + smoken, data = .x)),
+    main_effect_mod  = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)),
+    interaction_mod  = map(train, ~lm(bwt ~ bhead + blength + babysex + 
+                                        bhead*blength + bhead*babysex + blength*babysex + bhead*babysex +
+                                        bhead*blength*babysex, data = .x))) %>%
+  mutate(
+    rmse_linear = map2_dbl(my_mod, test, ~rmse(model = .x, data = .y)),
+    rmse_smooth = map2_dbl(main_effect_mod, test, ~rmse(model = .x, data = .y)),
+    rmse_wiggly = map2_dbl(interaction_mod, test, ~rmse(model = .x, data = .y)))
+  
+```
+
+```{r}
+cv_df %>% 
+  select(starts_with("rmse")) %>% 
+  pivot_longer(
+    everything(),
+    names_to = "model", 
+    values_to = "rmse",
+    names_prefix = "rmse_") %>% 
+  mutate(model = fct_inorder(model)) %>% 
+  ggplot(aes(x = model, y = rmse)) + 
+  geom_violin()
+
+
 ```
 
 
