@@ -102,13 +102,15 @@ homicide = read_csv("data/homicide-data.csv") #import 'homicide' data
 ```{r}
 homicide = homicide %>%
   mutate(city_state = str_c(city, ", ", state)) %>%
-  mutate(homicide_status = if_else(disposition == "Closed without arrest", "unresolved",
-                                   if_else(disposition == "Open/No arrest", "unresolved",
-                                           if_else(disposition == "Closed by arrest", "resolved", NA_character_)))) %>%
+  mutate(homicide_status = case_when(
+         disposition == "Closed without arrest" ~ 0,
+         disposition == "Open/No arrest" ~ 0,
+         disposition == "Closed by arrest" ~ 1))%>%
   filter(!(city_state %in% c("Dallas, TX", "Phoenix, AZ", "Kansas City, MO", "Tulsa, AL"))) %>% #omit observations
   filter(victim_race %in% c("Black", "White")) %>% #limit your analysis those for whom victim_race is white or black
-  mutate(victim_age = as.numeric(victim_age)) %>% # Be sure that victim_age is numeric
-  drop_na(victim_age)
+  mutate(victim_age = as.numeric(victim_age)) %>%  # Be sure that victim_age is numeric
+  drop_na(victim_age, victim_sex,victim_race, homicide_status)
+
 
 
 homicide
@@ -118,14 +120,17 @@ homicide
 ```{r, warning=FALSE}
 fit_log_MD = homicide %>% #use the glm function to fit a logistic regression
   filter(city_state == "Baltimore, MD") %>%
-  mutate(homicide_status = fct_relevel(homicide_status, "resloved")) %>%
-  glm(homicide_status ~ victim_age + victim_sex + victim_race, data = ., family = binomial())%>%
+  glm(homicide_status ~ victim_age + victim_sex + victim_race, 
+      data = ., family = binomial())%>%
   broom::tidy() %>%
   mutate(OR = exp(estimate),
          CI_lower = exp(estimate - 1.96*std.error),
          CI_higher = exp(estimate + 1.96*std.error)) %>%
   select(term, estimate, OR, CI_lower, CI_higher) %>%
+  filter(term == "victim_sexMale") %>%
   knitr::kable(digits = 3, col.names = c("Term", "Estimate", "Odds ratio", "95CI_low","95CI_high"))
+
+
 
 fit_log_MD
 ```
@@ -134,7 +139,6 @@ fit_log_MD
 ### Run glm for each of the cities
 ```{r}
 homicide_cities = homicide %>% #use the glm function to fit a logistic regression
-  mutate(homicide_status = fct_relevel(homicide_status, "resloved")) %>%
   nest(data = -city_state) %>%
   mutate(
     models = map(.x = data, ~ glm(homicide_status ~ victim_age + victim_sex + victim_race, data = .x, family = binomial())),
@@ -164,6 +168,15 @@ prob2_plot = homicide_cities %>%
 
 prob2_plot
 ```
+
+
+From this plot, 
+
+
+
+
+
+
 ```{r}
 ggsave(
   filename = "results/plot for each city(problem 2).pdf",
