@@ -7,6 +7,7 @@ output: github_document
 
 ```{r}
 library(tidyverse)
+library(modelr)
 ```
 
 ## Problem 1
@@ -47,7 +48,8 @@ fit_log_MD = homicide %>% #use the glm function to fit a logistic regression
          CI_higher = exp(estimate + 1.96*std.error)) %>%
   select(term, estimate, OR, CI_lower, CI_higher) %>%
   knitr::kable(digits = 3, col.names = c("Term", "Estimate", "Odds ratio", "95CI_low","95CI_high"))
-  
+
+fit_log_MD
 ```
 
 
@@ -93,5 +95,79 @@ ggsave(
   units = "cm"
   ) #export plot to 'results' directory
 ```
+
+
+## Problem 3
+
+### Load and clean the data 
+```{r}
+birthweight = read_csv("data/birthweight.csv") #import 'birthweight' data
+
+birthweight
+```
+
+```{r}
+birthweight = birthweight %>%
+  mutate(babysex = as.factor(babysex),
+         babysex = recode_factor(babysex, "1" = "Male", "2" = "Female"),
+         frace = as.factor(frace),
+         frace = recode_factor(frace, 
+                               "1" = "White", "2" = "Black", "3" = "Asian", 
+                               "4" = "Puerto Rican", "8" = "Other", "9" = "Unknown"),
+         malform = as.factor(malform),
+         malform = recode_factor(malform, "0" = "Absent", "1" = "Present"),
+         mrace = as.factor(mrace),
+         mrace = recode_factor(mrace, 
+                               "1" = "White", "2" = "Black", "3" = "Asian", "4" = "Puerto Rican", "8" = "Other"))
+
+skimr::skim(birthweight) #check missing data
+
+```
+
+### Propose a regression model for birthweight
+
+As we know, Genetics, age of the parent, Length of Pregnancy, Mother's habits, Baby's Gender, Ethnicity are important factors to influence baby's birth weight. Besides, I would like to focus on the mother's condition as factors in the influence of birthweight. So, I took them as predictors into my regression model, such as delwt, gaweeks, mheight, momage, mrace, smoken.
+
+```{r}
+birthweight_mymodel = lm(bwt ~ delwt + gaweeks + mheight + momage + mrace + smoken, data = birthweight)
+  
+birthweight_mymodel %>%
+  broom::tidy() %>%
+  knitr::kable(digits = 3)
+
+```
+
+### Create a plot of model residuals against fitted values 
+```{r}
+plot_residual_mymodel = birthweight %>%
+  add_predictions(birthweight_mymodel)%>%
+  add_residuals(birthweight_mymodel) %>%
+  ggplot(aes(x = pred, y = resid, color = resid))+
+  geom_point() +
+  geom_smooth(se = F, color = "red", method = "lm")+
+  labs(x = "Fitted values", y = "Residuals",
+       title = "Residuals v.s. Fitted values") 
+
+plot_residual_mymodel
+  
+```
+
+```{r}
+ggsave(
+  filename = "results/residual v.s. Fitted Values of mymodel (problem 3).pdf",
+  plot = plot_residual_mymodel,
+  width = 30,
+  height = 20,
+  units = "cm"
+  ) #export plot to 'results' directory
+```
+
+
+
+
+
+
+
+
 
 
