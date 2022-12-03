@@ -184,7 +184,7 @@ cv_df =
     rmse_linear = map2_dbl(my_mod, test, ~rmse(model = .x, data = .y)),
     rmse_smooth = map2_dbl(main_effect_mod, test, ~rmse(model = .x, data = .y)),
     rmse_wiggly = map2_dbl(interaction_mod, test, ~rmse(model = .x, data = .y)))
-  
+
 ```
 
 ```{r}
