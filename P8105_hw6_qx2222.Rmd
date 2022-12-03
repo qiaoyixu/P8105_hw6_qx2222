@@ -111,8 +111,6 @@ homicide = homicide %>%
   mutate(victim_age = as.numeric(victim_age)) %>%  # Be sure that victim_age is numeric
   drop_na(victim_age, victim_sex,victim_race, homicide_status)
 
-
-
 homicide
 ```
 
@@ -130,11 +128,10 @@ fit_log_MD = homicide %>% #use the glm function to fit a logistic regression
   filter(term == "victim_sexMale") %>%
   knitr::kable(digits = 3, col.names = c("Term", "Estimate", "Odds ratio", "95CI_low","95CI_high"))
 
-
-
 fit_log_MD
 ```
 
+From the output, for the city of Baltimore, MD, the estimated adjusted odds ratio for solving homicides comparing male victims to female victims is 0.426, keeping all other variables fixed. And, the confidence interval is between 0.325 and 0.558.
 
 ### Run glm for each of the cities
 ```{r}
@@ -169,13 +166,7 @@ prob2_plot = homicide_cities %>%
 prob2_plot
 ```
 
-
-From this plot, 
-
-
-
-
-
+From this plot, we could see that compared with other cities, the estimated OR for new york city is the lowest and the estimated OR for Albuquerque is the highest for solving homicides comparing male victims to female victims, keeping all variables fixed. Besides, for most cities, the odds of solved status homicides for male victims are lower than the odds of sloved status homicides for female victims.
 
 ```{r}
 ggsave(
@@ -219,7 +210,7 @@ skimr::skim(birthweight) #check missing data
 
 ### Propose a regression model for birthweight
 
-As we know, Genetics, age of the parent, Length of Pregnancy, Mother's habits, Baby's Gender, Ethnicity are important factors to influence baby's birth weight. Besides, I would like to focus on the mother's condition as factors in the influence of birthweight. So, I took them as predictors into my regression model, such as delwt, gaweeks, mheight, momage, mrace, smoken.
+As we know, Genetics, age of the parent, length of Pregnancy, mother's habits, baby's gender, ethnicity are important factors to influence baby's birth weight. Besides, I would like to only focus on the mother's condition as factors in the influence of birthweight. So, I took them as predictors into my regression model, such as delwt, gaweeks, mheight, momage, mrace, smoken.
 
 ```{r}
 birthweight_mymodel = lm(bwt ~ delwt + gaweeks + mheight + momage + mrace + smoken, data = birthweight)
@@ -273,30 +264,37 @@ cv_df =
                                         bhead*blength + bhead*babysex + blength*babysex + bhead*babysex +
                                         bhead*blength*babysex, data = .x))) %>%
   mutate(
-    rmse_linear = map2_dbl(my_mod, test, ~rmse(model = .x, data = .y)),
-    rmse_smooth = map2_dbl(main_effect_mod, test, ~rmse(model = .x, data = .y)),
-    rmse_wiggly = map2_dbl(interaction_mod, test, ~rmse(model = .x, data = .y)))
+    rmse_my_mod = map2_dbl(my_mod, test, ~rmse(model = .x, data = .y)),
+    rmse_main_effect_mod = map2_dbl(main_effect_mod, test, ~rmse(model = .x, data = .y)),
+    rmse_interaction_mod = map2_dbl(interaction_mod, test, ~rmse(model = .x, data = .y)))
 
 ```
 
 ```{r}
-cv_df %>% 
+cv_plot = cv_df %>% 
   select(starts_with("rmse")) %>% 
   pivot_longer(
     everything(),
     names_to = "model", 
     values_to = "rmse",
     names_prefix = "rmse_") %>% 
-  mutate(model = fct_inorder(model)) %>% 
+  mutate(model = fct_inorder(model)) %>%
   ggplot(aes(x = model, y = rmse)) + 
   geom_violin()
 
+cv_plot
 
 ```
 
-
-
-
+```{r}
+ggsave(
+  filename = "results/cross-validated plot (problem 3).pdf",
+  plot = cv_plot,
+  width = 30,
+  height = 20,
+  units = "cm"
+  ) #export plot to 'results' directory
+```
 
 
 
