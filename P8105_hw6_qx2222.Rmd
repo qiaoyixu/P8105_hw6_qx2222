@@ -286,6 +286,8 @@ cv_plot
 
 ```
 
+From the 'cv_plot' graph, we could see that the rmse value of my hypothesized model is biggest and the rmse value of the interaction model is lowest. The lower rmse value is, the better the model is. Therefore, the model using head circumference, length, sex, and all interactions (including the three-way interaction) between these is a clear winner!
+
 ```{r}
 ggsave(
   filename = "results/cross-validated plot (problem 3).pdf",
