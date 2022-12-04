@@ -247,7 +247,7 @@ ggsave(
 ```
 
 ### Compare your model to two others
-One using length at birth and gestational age as predictors (main effects only)
+One using length at birth and gestational age as predictors (main effects only)  
 One using head circumference, length, sex, and all interactions (including the three-way interaction) between these
 ```{r}
 cv_df = crossv_mc(birthweight,100) %>%
@@ -286,7 +286,7 @@ cv_plot
 
 ```
 
-From the 'cv_plot' graph, we could see that the rmse value of my hypothesized model is biggest and the rmse value of the interaction model is lowest. The lower rmse value is, the better the model is. Therefore, the model using head circumference, length, sex, and all interactions (including the three-way interaction) between these is a clear winner!
+From the 'cv_plot' graph, we could see that the rmse value of my hypothesized model is biggest and the rmse value of the interaction model is lowest. The lower rmse value is, the better the model is. Therefore, the model using head circumference, length, sex, and all interactions (including the three-way interaction) between these is a clear biggest winner! Then, the model using length at birth and gestational age as predictors (main effects only) is better than my hypothesized model. My hypthesized is the worst in those three models. 
 
 ```{r}
 ggsave(
